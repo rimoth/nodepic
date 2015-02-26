@@ -51,6 +51,7 @@ function scanInbox(inbox) {
 			// if any images exist move them to the folder corresponding to their EXIF data
 			// also rename the image files according to their EXIF data.
 			// also make a thumbnail
+			// add them to the database.
 
 	});
 }
