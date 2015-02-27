@@ -45,13 +45,17 @@ function parseDate(input) {
 function scanInbox(inbox) {
 	util.log('checking inbox: ' + inbox);
 	// let's check for any jpgs in inbox
+	// Shouldn't need to include 
 	readdirp({ root: inbox, fileFilter: [ '*.jpg' ], entryType: 'all' })
 		.on('data', function (entry) {
 			util.log(entry.fullPath);
-			// if any images exist move them to the folder corresponding to their EXIF data
-			// also rename the image files according to their EXIF data.
-			// also make a thumbnail
-			// add them to the database.
+			// OK Let's look at the EXIF data and determine path and filename from the EXIF datetime
+			// MIght be best to log the photo first so we know of its existence - better from a transaction point of view?
+			// Use camera name as suffix
+			// Increment counter if file of same name exists.
+			// Move to correct location (year/month) and rename the file.
+			// Make a thumbnail
+			// update database.
 
 	});
 }
@@ -61,7 +65,7 @@ function scanTree(dir, indexDir, done) {
 	'use strict';
 
 	console.log('started scanning '+ dir);
-	// Scan for JPG & PNG including folders.
+	// Scan for JPG including folders.
 	readdirp({ root: dir, fileFilter: [ '*.jpg' ], entryType: 'all' })
 		.on('data', function (entry) {
 
@@ -91,6 +95,7 @@ function scanTree(dir, indexDir, done) {
 		        	if (err) return console.error(err);
 	        		// Saved image entry to database, now create thumbnail.
    					util.log('added to db ' + ( entry.stat.isDirectory() ? 'folder: ' : 'image: ')+ entry.path);
+   					// Photo or Folder
    					if (entry.stat.isFile()) {
 
 

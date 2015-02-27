@@ -11,10 +11,17 @@ var mongoose       = require('mongoose');
 var imageIndexing = require('./app/imageIndexing');
 
 var util = require('util');
+
 // configuration ===========================================
     
 // config files
 var db = require('./config/db');
+var config = require('./config/config');
+
+// Determine paths to library, index and inbox
+var pathLibrary = config.photoFolder+'/photos';
+var pathIndex = config.photoFolder+'/index';
+var pathInbox = config.photoFolder+'/inbox';
 
 // set our port
 var port = process.env.PORT || 8081; 
@@ -41,9 +48,9 @@ app.use(express.static(__dirname + '/public'));
 
 
 // set route to thumbnails
-app.use('/thumbs', express.static('/Users/ttu02/workspace/pictures/index'));
+app.use('/thumbs', express.static(pathIndex));
 // set route to source images
-app.use('/images', express.static('/Users/ttu02/workspace/pictures/photos'));
+app.use('/images', express.static(pathLibrary));
 
 // routes ==================================================
 require('./app/routes')(app); // configure our routes
@@ -62,7 +69,7 @@ exports = module.exports = app;
 // might be a good idea to put readme files in inbox and image folders
 // index folder should be hidden, but can do the same nonetheless
 function inboxDaemon() {
-	imageIndexing.scanInbox('/Users/ttu02/workspace/pictures/inbox');
+	imageIndexing.scanInbox(pathInbox);
   	setTimeout(inboxDaemon, 10*1000);
 }
 setTimeout(inboxDaemon, 10*1000);
@@ -70,7 +77,7 @@ setTimeout(inboxDaemon, 10*1000);
 // Scan folder should be triggered by the UI, or major file change event.
 // This is a mjor event call - a complete rescan
 // Scan Folder
-imageIndexing.scanTree('/Users/ttu02/workspace/pictures/photos', '/Users/ttu02/workspace/pictures/index', function(err,results) {
+imageIndexing.scanTree(pathLibrary, pathIndex, function(err,results) {
 	//console.log(results);
 });
 
