@@ -1,4 +1,4 @@
-// server.js
+	// server.js
 
 // modules =================================================
 var express        = require('express');
@@ -22,6 +22,7 @@ var config = require('./config/config');
 var pathLibrary = config.photoFolder+'/photos';
 var pathIndex = config.photoFolder+'/index';
 var pathInbox = config.photoFolder+'/inbox';
+var pathInProcess = config.photoFolder+'/processing';
 
 // set our port
 var port = process.env.PORT || 8081; 
@@ -69,7 +70,7 @@ exports = module.exports = app;
 // might be a good idea to put readme files in inbox and image folders
 // index folder should be hidden, but can do the same nonetheless
 function inboxDaemon() {
-	imageIndexing.scanInbox(pathInbox);
+	imageIndexing.scanInbox(pathInbox,pathInProcess,pathLibrary,pathIndex);
   	setTimeout(inboxDaemon, 10*1000);
 }
 setTimeout(inboxDaemon, 10*1000);

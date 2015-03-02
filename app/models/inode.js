@@ -12,7 +12,10 @@ var inodeSchema = new mongoose.Schema({
     thumbUrl : {type : String, default: ''},
     imageUrl : {type : String, default: ''},
     description  : {type : String, default: ''},
-    gps : mongoose.Schema.Types.Mixed
+    gps : mongoose.Schema.Types.Mixed,
+    make : {type : String, default: ''},
+    model : {type : String, default: ''},
+    md5 : {type : String, default: ''}
 });
 
 // define our inode model to create instances of data that will be stored in documents
