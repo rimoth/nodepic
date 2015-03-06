@@ -8,15 +8,9 @@ var fs = require('fs-extra');
 var path = require('path');
 var lwip = require('lwip');
 var readdirp = require('readdirp');
-var ExifImage = require('exif').ExifImage;
+var ImageFile = require('./imagefile');
+//var ExifImage = require('exif').ExifImage;
 var Inode = require('./models/inode');
-
-Date.prototype.getMonthName = function() {
-	var monthNames = [ "January", "February", "March", "April", "May", "June", 
-            "July", "August", "September", "October", "November", "December" ];
-    return monthNames[this.getMonth()];
-}
-
 
 function createThumbnail(sourceImage, thumb) {
 	'use strict';
@@ -39,13 +33,6 @@ function createThumbnail(sourceImage, thumb) {
 	 		});
 		});
 	});
-}
-
-function parseDate(input) {
-  'use strict';
-  var parts = input.split(/[\/ .:]/);
-  // new Date(year, month [, day [, hours[, minutes[, seconds[, ms]]]]])
-  return new Date(parts[0], parts[1]-1, parts[2],parts[3],parts[4],parts[5]); // Note: months are 0-based
 }
 
 function addFolderNode(libraryPath,relativePath,folderName) {
@@ -95,6 +82,73 @@ function checkYearMonth(pathLibrary,imageYear,imageMonth) {
 
 }
 
+// This has been modified to filter file extensions by ext, e.g. '.jpg'
+// This is synchronous!! Not very node PC!
+var scan = function(dir,ext) {
+    var results = [];
+    var list = fs.readdirSync(dir);
+    list.forEach(function(file) {
+        file = dir + '/' + file;
+        var stat = fs.statSync(file);
+        if (stat && stat.isDirectory()) results = results.concat(scan(file,ext));
+        else if (path.extname(file)==ext)  results.push(file); 
+    });
+    return results;
+}
+
+function importNewImage(file, pathInProcess, pathLibrary, pathIndex,callback) {
+		util.log('started processing: '+file);
+		//setTimeout(function() {callback(1);},1000);
+		/// Call new funciton here to process the file in the inbox.
+		var processFile = pathInProcess+'/'+path.basename(file);
+		fs.move(file, processFile, function(err) {
+  			if (err) return console.error(err);
+
+  			var img = new ImageFile({image : processFile, libraryPath : pathLibrary}, function (err, img) {
+
+  				callback(1);
+
+		    });
+		});
+	}
+
+// Let's check the inbox folder for new photos - every 10 seconds should suffice.
+// might be a good idea to put readme files in inbox and image folders
+// index folder should be hidden, but can do the same nonetheless
+
+function inboxDaemon(pathInbox,pathInProcess,pathLibrary,pathIndex) {
+	scanInbox3(pathInbox,pathInProcess,pathLibrary,pathIndex);
+}
+
+function scanInbox3(pathInbox,pathInProcess,pathLibrary,pathIndex) {
+	util.log('checking inbox: ' + pathInbox);
+
+	var files = scan(pathInbox,'.jpg'); // Synchronous directory scan for jpg's
+	var results = [];
+
+	function final() {
+		util.log('finished checking inbox: ' + pathInbox);
+  		setTimeout(function() {inboxDaemon(pathInbox,pathInProcess,pathLibrary,pathIndex);}, 10*1000);
+	}
+
+	function series(file, pathInProcess, pathLibrary, pathIndex) {
+  		if(file) {
+    		importNewImage( file, pathInProcess, pathLibrary, pathIndex, function(result) {
+      			results.push(result);
+      			return series(files.shift(),pathInProcess,pathLibrary,pathIndex);
+    		});
+  		} else {
+    		return final();
+  		}
+	}
+
+    // Let's kick off the scan
+    series(files.shift(), pathInProcess, pathLibrary, pathIndex);
+}
+
+
+
+
 function scanInbox(inbox,inProcess,pathLibrary,pathIndex) {
 	util.log('checking inbox: ' + inbox);
 
@@ -142,10 +196,9 @@ function scanInbox(inbox,inProcess,pathLibrary,pathIndex) {
     					imageUrl : '/images/'+ imagePath+'/'+imageName,
     					description  : '',
     					dateTimeOriginal : imageDate,
-    					gps : exifData.gps
-    					//,
-    					//make : exifData.exif.image.make,
-    					//model : exifData.exif.image.model
+    					gps : exifData.gps,
+    					make : exifData.image.image.make,
+    					model : exifData.image.image.model
         			});
         			thumb = imagePath + '/' + newObj._id + '.jpg';
 	        		newObj.thumbUrl = '/thumbs/' + thumb;
@@ -257,3 +310,4 @@ function scanTree(dir, indexDir, done) {
 
 exports.scanTree = scanTree;
 exports.scanInbox = scanInbox;
+exports.inboxDaemon = inboxDaemon;

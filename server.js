@@ -66,21 +66,15 @@ console.log('Magic happens on port ' + port);
 // expose app           
 exports = module.exports = app;                         
 
-// Let's check the inbox folder for new photos - every 10 seconds should suffice.
-// might be a good idea to put readme files in inbox and image folders
-// index folder should be hidden, but can do the same nonetheless
-function inboxDaemon() {
-	imageIndexing.scanInbox(pathInbox,pathInProcess,pathLibrary,pathIndex);
-  	setTimeout(inboxDaemon, 10*1000);
-}
-setTimeout(inboxDaemon, 10*1000);
+// Call Initial Inbox Scan
+setTimeout(function(){imageIndexing.inboxDaemon(pathInbox,pathInProcess,pathLibrary,pathIndex);}, 5*1000);
 
 // Scan folder should be triggered by the UI, or major file change event.
 // This is a mjor event call - a complete rescan
 // Scan Folder
-imageIndexing.scanTree(pathLibrary, pathIndex, function(err,results) {
+//imageIndexing.scanTree(pathLibrary, pathIndex, function(err,results) {
 	//console.log(results);
-});
+//});
 
 
 
