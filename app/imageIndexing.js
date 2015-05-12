@@ -1,4 +1,4 @@
-// app/imageIndexing
+// app/imageIndexing.js
 
 
 var exec = require('querystring');
@@ -12,28 +12,6 @@ var ImageFile = require('./imagefile');
 //var ExifImage = require('exif').ExifImage;
 var Inode = require('./models/inode');
 
-function createThumbnail(sourceImage, thumb) {
-	'use strict';
-	// We are assuming valid source image file and thumb file.
-	// Let's create a thumbnail for client display
-	lwip.open(sourceImage, function(err, image) {
-		if (err) return console.error(err);
-
-		// We need to scale by the smaller the width and height ratios.
-		var widthRatio=200/image.width();
-		var heightRatio=120/image.height();
-		var scaleRatio=(widthRatio>heightRatio ? heightRatio : widthRatio);
-		image.scale(scaleRatio, function(err, image) {
-			image.writeFile(thumb, function(err) {
-	 			if (err) {
-	 				util.log(err);
-	 			} else {
-					util.log('created thumb nail : '+ thumb);
-	 			}
-	 		});
-		});
-	});
-}
 
 function addFolderNode(libraryPath,relativePath,folderName) {
 	'use strict';
@@ -91,62 +69,58 @@ var scan = function(dir,ext) {
         file = dir + '/' + file;
         var stat = fs.statSync(file);
         if (stat && stat.isDirectory()) results = results.concat(scan(file,ext));
-        else if (path.extname(file)==ext)  results.push(file); 
+        else if (path.extname(file).toUpperCase()==ext.toUpperCase())  results.push(file); 
     });
     return results;
 }
 
-function importNewImage(file, pathInProcess, pathLibrary, pathIndex,callback) {
-		util.log('started processing: '+file);
-		//setTimeout(function() {callback(1);},1000);
-		/// Call new funciton here to process the file in the inbox.
-		var processFile = pathInProcess+'/'+path.basename(file);
-		fs.move(file, processFile, function(err) {
-  			if (err) return console.error(err);
+function importNewImage(sourceFile, pathInProcess, pathLibrary, pathIndex,callback) {
 
-  			var img = new ImageFile({image : processFile, libraryPath : pathLibrary}, function (err, img) {
+	var img = new ImageFile({image : sourceFile, processPath : pathInProcess, libraryPath : pathLibrary,indexPath : pathIndex}, function (err, img) {
+		if (err) return console.error(err);
+		callback(1);
+   }); 
 
-  				callback(1);
-
-		    });
-		});
-	}
+}
 
 // Let's check the inbox folder for new photos - every 10 seconds should suffice.
 // might be a good idea to put readme files in inbox and image folders
 // index folder should be hidden, but can do the same nonetheless
 
 function inboxDaemon(pathInbox,pathInProcess,pathLibrary,pathIndex) {
-	scanInbox3(pathInbox,pathInProcess,pathLibrary,pathIndex);
-}
-
-function scanInbox3(pathInbox,pathInProcess,pathLibrary,pathIndex) {
-	util.log('checking inbox: ' + pathInbox);
-
 	var files = scan(pathInbox,'.jpg'); // Synchronous directory scan for jpg's
 	var results = [];
 
 	function final() {
 		util.log('finished checking inbox: ' + pathInbox);
+		// Line up next check in 10s.
   		setTimeout(function() {inboxDaemon(pathInbox,pathInProcess,pathLibrary,pathIndex);}, 10*1000);
 	}
 
 	function series(file, pathInProcess, pathLibrary, pathIndex) {
   		if(file) {
-    		importNewImage( file, pathInProcess, pathLibrary, pathIndex, function(result) {
-      			results.push(result);
+
+			var img = new ImageFile({image : file, processPath : pathInProcess, libraryPath : pathLibrary,indexPath : pathIndex}, function (err, img) {
+				if (err) return console.error(err);
+				//callback(1);
       			return series(files.shift(),pathInProcess,pathLibrary,pathIndex);
-    		});
+   			}); 
+
+
+    		//importNewImage( file, pathInProcess, pathLibrary, pathIndex, function(result) {
+      		//	results.push(result);
+      		//	return series(files.shift(),pathInProcess,pathLibrary,pathIndex);
+    		//});
   		} else {
     		return final();
   		}
 	}
 
     // Let's kick off the scan
+	util.log('checking inbox: ' + pathInbox);
     series(files.shift(), pathInProcess, pathLibrary, pathIndex);
+
 }
-
-
 
 
 function scanInbox(inbox,inProcess,pathLibrary,pathIndex) {

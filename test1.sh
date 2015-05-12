@@ -1,4 +1,6 @@
-rm -R /Users/ttu02/workspace/pictures/processing/*
-rm -R /Users/ttu02/workspace/pictures/photos/*
-cp -a /Users/ttu02/workspace/pictures/inboxCopy/. /Users/ttu02/workspace/pictures/inbox/
+rm -R /home/tim/Pictures/processing/*
+rm -R /home/tim/Pictures/photos/*
+rm -R /home/tim/Pictures/index/*
+rm -R /home/tim/Pictures/inbox/*
+cp -a /home/tim/Pictures/backup/. /home/tim/Pictures/inbox/
 node server.js
