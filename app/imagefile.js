@@ -111,12 +111,17 @@ function ImageFile (options, callback) {
 	  			}
 
   				// Let's work out the desired filename from the Exif data successfully rertrieved from the image file
-				this.dateTimeOriginal = parseDate(exifData.exif.DateTimeOriginal);
-				this.year = this.dateTimeOriginal.getFullYear();
-				this.month = ("0" + (this.dateTimeOriginal.getMonth() + 1)).slice(-2)+' '+ this.dateTimeOriginal.getMonthName();
-				this.path = this.year+'/'+this.month;
-				this.imageFileName = this.dateTimeOriginal.toISOString().substr(0, 19).replace('T', ' ').replace(':','.').replace(':','.')+'.jpg';
-				this.fullPath = options.libraryPath+'/'+this.path+'/'+this.imageFileName;
+				if (exifData.exif.DateTimeOriginal) {
+					this.dateTimeOriginal = parseDate(exifData.exif.DateTimeOriginal);
+					this.year = this.dateTimeOriginal.getFullYear();
+					this.month = ("0" + (this.dateTimeOriginal.getMonth() + 1)).slice(-2)+' '+ this.dateTimeOriginal.getMonthName();
+					this.path = this.year+'/'+this.month;
+					this.imageFileName = this.dateTimeOriginal.toISOString().substr(0, 19).replace('T', ' ').replace(':','.').replace(':','.')+'.jpg';
+					this.fullPath = options.libraryPath+'/'+this.path+'/'+this.imageFileName;
+				} else {
+					this.fullPath = options.libraryPath+'/NoExifData/'+path.basename(options.image);
+					this.imageFileName = path.basename(options.image);
+				}
 
 				// Need to validate the filename as possible to have more than 1 image for each second in time.
 				// Following function will return filename with sufix '-xxx' should any duplicates be encountered.
